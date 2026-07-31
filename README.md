@@ -68,6 +68,11 @@ Full runs: `benchmarks/results/*.json` (re-generable on the node).
 
 ### Verified accuracy notes (2026-07-31 audit)
 - THRML mean energy / std recompute exactly from stored samples (±1 spins only).
+- Daemon backend head-to-head on the same 8-spin cycle Ising model, 256 samples,
+  seed 0 (mean energy, lower = better): python fallback −6.37 @ β=1 (deepest —
+  its per-site sweep mixes harder), thrml-jax −4.32 (GPU path; add warmup for
+  deeper convergence), manual jax-gibbs +0.29 (equilibrates slowly from the
+  all-ones start — fallback only, use the thrml path in production).
 - CUDA-Q stored energies/gaps recompute to displayed precision; bit-order
   calibration (distribution-based, cached per process) was stable across runs.
 - Brute-force scaling measured on-node: n=14 → 382 ms, n=16 → 2.0 s, n=18 →
