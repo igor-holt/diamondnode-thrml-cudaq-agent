@@ -288,20 +288,25 @@ def _result_counts(result) -> dict:
 
 
 def _calibrate_bit_order(Q_matrix) -> int:
-    """Bit order calibration against brute force at n=4 (CUDA-Q endianness varies)."""
+    """Bit-order calibration against the sampling distribution at n=4.
+
+    The correct endianness yields lower *mean energy over all sampled
+    bitstrings* (sampling is biased toward low-energy states); a single
+    top sample is too noisy. Runs once per process and caches the order.
+    """
     global _cudaq_bit_order
     n = len(Q_matrix)
     if n != 4:
         return _cudaq_bit_order or 1
     gf = _qubo_bruteforce(Q_matrix)
     ground = gf["ground_energy"]
-    best_err, best_order = None, 1
+    top, counts, probs = _cudaq_qubo_sample(Q_matrix, shots=1024)
+    mean_err = {}
     for order in (1, -1):
-        top, _, _ = _cudaq_qubo_sample(Q_matrix, shots=512)
-        bits = [int(c) for c in top[::order]]
-        err = abs(_qubo_energy(Q_matrix, bits) - ground)
-        if best_err is None or err < best_err:
-            best_err, best_order = err, order
+        energies = [_qubo_energy(Q_matrix, [int(c) for c in bits[::order]]) * p
+                    for bits, p in probs.items()]
+        mean_err[order] = abs(sum(energies) - ground)
+    best_order = 1 if mean_err[1] <= mean_err[-1] else -1
     _cudaq_bit_order = best_order
     return best_order
 

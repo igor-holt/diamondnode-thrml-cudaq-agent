@@ -49,27 +49,41 @@ Suites:
 ## Measured baselines (diamondnode, 2026-07-31)
 
 Machine is a shared fleet host (load 60+, grok llama-server resident on the GPU at
-2.8/4 GB VRAM) — numbers below are under live fleet load.
+2.8/4 GB VRAM) — numbers below are under live fleet load. CUDA-Q is unseeded in
+0.14, so the suite averages 3 repeats per size; LLM decode rates come from
+ollama's `eval_duration` (ns fields on this build), separate from wall time.
 
 | Suite | Metric | Value |
 |-------|--------|-------|
-| hash | ops/s (4 threads, SHA-256) | **1,251,740 ops/s** |
+| hash | ops/s (4 threads, SHA-256) | **1.25–2.35M ops/s** (load-dependent; gate tolerance 50%) |
 | hash | p50 latency | **0.0002 ms** |
-| llm (qwen2:0.5b) | decode | **0.6 tok/s**, 4131.6 ms/token p50 (starved by fleet load) |
-| llm (llama3.2:3b) | load | fails: HTTP 500 — VRAM exhausted by resident grok server (2.8/4 GB) |
-| cudaq (n=14, 4096 shots) | solve wall | **0.73 s** (JIT-cached), 5597 shots/s |
-| cudaq (n=4…14) | relative gap vs ground | 0.69–1.0 for n ≤ 10 (depth-1 fixed-angle QAOA heuristic) |
+| llm (qwen2:0.5b) | decode | **141.6 tok/s** (7.1 ms/token p50), 0.36 s load |
+| llm (qwen2:0.5b) | end-to-end wall | 74.5 tok/s (includes load + prompt eval) |
+| llm (llama3.2:3b) | decode | **0.53 tok/s** — VRAM-starved (CPU spill; grok holds 2.8/4 GB) |
+| cudaq (n=14, 4096 shots × 3) | solve wall (warm JIT) | **0.118 s** mean, 34,944 shots/s |
+| cudaq (n=4…10) | quality vs brute force | best-3-run gap 0.48–1.41 (mean gap 0.69–1.63); depth-1 fixed-angle QAOA heuristic |
 | thrml (n=64, 256 samples) | sampling | **9.4 samples/s** on `cuda:0` (24–38 samples/s for n ≤ 32) |
 
-Full runs: `benchmarks/results/*.json` (also re-generable on the node).
+Full runs: `benchmarks/results/*.json` (re-generable on the node).
+
+### Verified accuracy notes (2026-07-31 audit)
+- THRML mean energy / std recompute exactly from stored samples (±1 spins only).
+- CUDA-Q stored energies/gaps recompute to displayed precision; bit-order
+  calibration (distribution-based, cached per process) was stable across runs.
+- Brute-force scaling measured on-node: n=14 → 382 ms, n=16 → 2.0 s, n=18 →
+  10.8 s, n=20 → 52 s ⇒ crossover vs warm-cache CUDA-Q (~0.12 s) at n ≈ 13–14.
+- First-call CUDA-Q includes JIT compile (tens of seconds); `wall_s` after
+  warm-up is what the baseline tracks.
 
 Known limits (honest):
-- `llama3.2:3b` cannot co-reside with the fleet's grok `llama-server` on 4 GB VRAM — run
-  benchmarks when the fleet GPU slot is free, or track `qwen2:0.5b` (default).
-- Depth-1 QAOA with fixed angles is a heuristic: quality (~0.7 relative gap) is the baseline
-  to beat via angle optimization, more layers, or THRML-guided sampling.
-- `thrml` n=64 mean energy does not converge from the empty init state in 256 samples at
-  β=1 — increase samples or warmup for production routing.
+- `llama3.2:3b` decodes at 0.53 tok/s only because grok's `llama-server`
+  occupies the VRAM — with a free GPU slot it should reach tens of tok/s.
+  Track `qwen2:0.5b` (GPU-resident, 141 tok/s) by default.
+- Depth-1 QAOA with fixed angles is a heuristic: relative gap vs ground truth
+  (0.5–1.6 on these instances) is the quality baseline to beat via angle
+  optimization, more layers, or THRML-guided sampling.
+- `thrml` n=64 mean energy does not converge from the empty init state in 256
+  samples at β=1 — increase samples or warmup for production routing.
 
 ## Tests & CI
 

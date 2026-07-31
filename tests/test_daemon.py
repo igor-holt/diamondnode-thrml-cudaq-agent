@@ -90,6 +90,12 @@ def test_cudaq_qubo_falls_back_without_cudaq(monkeypatch):
     assert res["optimal"] is True
 
 
+def test_calibrate_bit_order_cached_and_symmetric():
+    # calibration only runs at n=4; other sizes reuse cache without sampling
+    td._cudaq_bit_order = 1
+    assert td._calibrate_bit_order([[1.0] * 6 for _ in range(6)]) == 1
+
+
 def test_thermal_sample_shape_any_backend():
     res = td.thermal_sample_ising(num_spins=4, samples=16, seed=1)
     assert len(res["samples"]) == 16

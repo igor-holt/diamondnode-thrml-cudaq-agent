@@ -54,20 +54,20 @@ SUITES = {
 # metric -> pipe-delimited path into result dict ("results|-1|wall_s" = last row)
 METRIC_PATHS: dict[str, dict[str, str]] = {
     "hash": {"ops_per_s": "ops_per_s", "p50_ms": "p50_ms"},
-    "llm": {"llm_tok_per_s_mean": "results|qwen2:0.5b|tok_per_s_mean",
-            "llm_ms_per_token_p50": "results|qwen2:0.5b|ms_per_token_p50"},
-    "cudaq": {"cudaq_largest_wall_s": "results|-1|wall_s",
-              "cudaq_largest_gap": "results|-1|relative_gap"},
+    "llm": {"llm_tok_per_s_decode": "results|qwen2:0.5b|tok_per_s_decode_mean",
+            "llm_ms_per_token_decode_p50": "results|qwen2:0.5b|ms_per_token_decode_p50"},
+    "cudaq": {"cudaq_largest_wall_s": "results|-1|wall_s_mean",
+              "cudaq_n10_gap_mean": "results|3|relative_gap_mean"},
     "thrml": {"thrml_largest_samples_per_s": "results|-1|samples_per_s"},
 }
 
 TOLERANCES: dict[str, dict[str, dict]] = {
-    "hash": {"ops_per_s": {"type": "higher", "limit": 0.10},
+    "hash": {"ops_per_s": {"type": "higher", "limit": 0.50},  # fleet load swings 2x
              "p50_ms": {"type": "lower", "limit": 0.15}},
-    "llm": {"llm_tok_per_s_mean": {"type": "higher", "limit": 0.15},
-            "llm_ms_per_token_p50": {"type": "lower", "limit": 0.20}},
+    "llm": {"llm_tok_per_s_decode": {"type": "higher", "limit": 0.15},
+            "llm_ms_per_token_decode_p50": {"type": "lower", "limit": 0.20}},
     "cudaq": {"cudaq_largest_wall_s": {"type": "lower", "limit": 0.25},
-              "cudaq_largest_gap": {"type": "lower", "limit": 0.50}},
+              "cudaq_n10_gap_mean": {"type": "lower", "limit": 0.50}},
     "thrml": {"thrml_largest_samples_per_s": {"type": "higher", "limit": 0.25}},
 }
 
