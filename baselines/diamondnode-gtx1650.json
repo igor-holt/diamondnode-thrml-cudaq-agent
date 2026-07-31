@@ -1,0 +1,40 @@
+{
+  "cudaq": {
+    "cudaq_largest_wall_s": {
+      "env": "diamondnode-gtx1650-cudaq0.14.2",
+      "unit": "",
+      "value": 0.7318
+    }
+  },
+  "hash": {
+    "ops_per_s": {
+      "env": "diamondnode-gtx1650-python3.12",
+      "unit": "",
+      "value": 1251739.7
+    },
+    "p50_ms": {
+      "env": "diamondnode-gtx1650-python3.12",
+      "unit": "",
+      "value": 0.0002
+    }
+  },
+  "llm": {
+    "llm_ms_per_token_p50": {
+      "env": "diamondnode-gtx1650-ollama",
+      "unit": "",
+      "value": 4131.586
+    },
+    "llm_tok_per_s_mean": {
+      "env": "diamondnode-gtx1650-ollama",
+      "unit": "",
+      "value": 0.6
+    }
+  },
+  "thrml": {
+    "thrml_largest_samples_per_s": {
+      "env": "diamondnode-gtx1650-thrml-jax",
+      "unit": "",
+      "value": 9.36
+    }
+  }
+}
